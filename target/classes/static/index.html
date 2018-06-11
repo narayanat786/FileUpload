@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>File Up Down</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+  <style>
+    body {
+        color: #f5f6f7;
+    }
+    .margin {
+        margin-bottom: 20px;
+    }
+    .bg-1 { 
+        background-color: #1abc9c; /* Green */
+        color: #ffffff;
+    }
+    .bg-2 { 
+        background-color: #2f2f2f; /* Black Gray */
+        color: #fff;
+    }
+    .container-fluid {
+        padding-top: 70px;
+        padding-bottom: 70px;
+    }
+    #fileUpButton {
+        margin-left: 155px;
+    }
+ 
+  </style>
+</head>
+<body>
+
+<!-- First Container -->
+<div class="container-fluid bg-1 text-center" style="padding:140px">  
+  <div class="row">
+    <div class="col-sm-6">
+      <h3 class="margin">File Upload</h3>
+        <form method="post" enctype="multipart/form-data" id="fileUploadForm">
+            <label class="custom-file col-sm-4" id="fileUpButton">
+                <label for="files" class="btn btn-secondary" id="fileLabel">Select File</label>
+                <input type="file" name="file" id="file"  style="visibility:hidden;">
+            </label>            
+            <br><br>
+            <input type="submit" class="btn btn-secondary" value="Upload" id="btnSubmit"/>
+        </form>
+        <p>
+            <br><span id="result"></span>
+        </p>  
+    </div>
+    <div class="col-sm-6"> 
+        <h3 class="margin">File Metadata</h3>
+        <input type="text" id="file-id" class="form-control col-sm-3" style="display: inline" placeholder="Enter File Id">
+        <button type="button" class="btn btn-secondary" id="getMetadata">Submit</button>
+        <h3 style="display: inline;padding: 5px">Or</h3>
+        <button type="button" class="btn btn-secondary" id="getAllMetadata">Get all Files Metadata</button>
+        <div id="file-details">
+            <br><br>
+        </div>
+    </div>
+  </div>
+</div>
+<!-- Footer -->
+<footer class="container-fluid bg-2 text-center" style="height:300px"> 
+</footer>
+<script>
+$(document).ready(function () {
+
+    $("#btnSubmit").click(function (event) {
+
+        //stop submit the form, we will post it manually.
+        event.preventDefault();
+
+        fire_ajax_submit();
+
+    });
+    
+    $("#getMetadata").click(function(){
+        $.ajax({
+            url: '/api/file/'+$('#file-id').val(),
+            type: "GET",
+            success: function (data) {
+                console.log(data);
+                $('#file-details').html('<br><br>');
+                $('#file-details').append('<h5>Below are file details of file with id '+$('#file-id').val()+'</h5>');
+                $.each(data, function(key, value) { 
+                    if(key == 'handler' || key == 'hibernateLazyInitializer')
+                        return true;
+                    $('#file-details').append('<p>'+key+' : '+value+'</p>');
+                });
+            }
+        });
+    });
+    
+    $("#getAllMetadata").click(function(){
+        $.ajax({
+            url: '/api/file/all',
+            type: "GET",
+            success: function (data) {
+                console.log(data[1]);
+                $('#file-details').html('<br><br>');
+                $('#file-details').append('<h5>Below are file details of all files</h5>');
+                for (var i = 0, len = data.length; i < len; i++) {
+                    $.each(data[i], function(key, value) { 
+                        if(key == 'handler' || key == 'hibernateLazyInitializer')
+                            return true;
+                        $('#file-details').append('<p>'+key+' : '+value+'</p>');
+                    });
+                }
+            }
+        });
+    });
+    
+    $('input:file').change(
+    function(e){
+        console.log(e.target.files[0].name);
+        document.getElementById('fileLabel').innerHTML = e.target.files[0].name;
+    });
+
+});
+
+function fire_ajax_submit() {
+
+    // Get form
+    var form = $('#fileUploadForm')[0];
+
+    var data = new FormData(form);
+
+    $("#btnSubmit").prop("disabled", true);
+
+    $.ajax({
+        type: "POST",
+        enctype: 'multipart/form-data',
+        url: "/api/upload",
+        data: data,
+        processData: false, //prevent jQuery from automatically transforming the data into a query string
+        contentType: false,
+        cache: false,
+        timeout: 600000,
+        success: function (data) {
+
+            $("#result").text(data);
+            console.log("SUCCESS : ", data);
+            $("#btnSubmit").prop("disabled", false);
+
+        },
+        error: function (e) {
+
+            $("#result").text(e.responseText);
+            console.log("ERROR : ", e);
+            $("#btnSubmit").prop("disabled", false);
+
+        }
+    });
+
+}
+</script>
+</body>
+</html>
